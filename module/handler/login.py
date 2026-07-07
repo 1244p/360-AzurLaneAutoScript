@@ -56,7 +56,7 @@ class LoginHandler(UI):
                 confirm_timer.reset()
 
             # Login
-            if self.match_template_color(LOGIN_CHECK, offset=(30, 30), interval=5):
+            if self.match_template_color(LOGIN_CHECK, offset=(5, 5), interval=5):
                 time.sleep(5)
                 self.device.click(FLOAT_BALL1)
                 time.sleep(5)
