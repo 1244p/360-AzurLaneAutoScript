@@ -2,7 +2,7 @@ name: Sync Fork with Upstream
 
 on:
   schedule:
-    - cron: '0 8 * * *'   # Every day at 8:00 UTC (16:00 Beijing time)
+    - cron: '0 16 * * *'   # Every day at 16:00 UTC (00:00 Beijing time)
   workflow_dispatch:        # Allow manual trigger from GitHub web UI
 
 jobs:
