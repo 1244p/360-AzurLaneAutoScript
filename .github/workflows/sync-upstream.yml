@@ -1,0 +1,27 @@
+name: Sync Fork with Upstream
+
+on:
+  schedule:
+    - cron: '0 8 * * *'   # Every day at 8:00 UTC (16:00 Beijing time)
+  workflow_dispatch:        # Allow manual trigger from GitHub web UI
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configure git
+        run: |
+          git config --global merge.ours.driver true
+          git config user.name "1244p"
+          git config user.email "a3067608187@gmail.com"
+
+      - name: Add upstream and sync
+        run: |
+          git remote add upstream https://github.com/LmeSzinc/AzurLaneAutoScript.git
+          git fetch upstream
+          git merge upstream/master --no-edit || true
+          git push origin master
