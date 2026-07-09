@@ -56,10 +56,10 @@ class LoginHandler(UI):
                 confirm_timer.reset()
 
             # Login
-            if self.match_template_color(LOGIN_CHECK, offset=(5, 5), interval=5):
-                time.sleep(5)
+            if self.match_template_color(LOGIN_CHECK, offset=(1, 1), interval=5):
+                time.sleep(3)
                 self.device.click(FLOAT_BALL1)
-                time.sleep(5)
+                time.sleep(3)
                 self.device.click(FLOAT_BALL2)
                 self.device.click(LOGIN_CHECK)
                 if not login_success:
