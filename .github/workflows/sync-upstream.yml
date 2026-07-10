@@ -33,4 +33,15 @@ jobs:
             echo "Merge conflict detected, aborting merge"
             git merge --abort
           fi
-          git push --force-with-lease origin master
+          for i in 1 2 3; do
+            if git push origin master; then
+              break
+            fi
+            echo "Push rejected, refreshing origin/master and retrying (${i}/3)"
+            git fetch origin
+            git merge origin/master --no-edit || true
+            if [ "$i" -eq 3 ]; then
+              echo "Failed to push after retries"
+              exit 1
+            fi
+          done
