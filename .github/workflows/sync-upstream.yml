@@ -8,6 +8,8 @@ on:
 jobs:
   sync:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v5
         with:
@@ -25,5 +27,8 @@ jobs:
           git remote remove upstream 2>/dev/null || true
           git remote add upstream https://github.com/LmeSzinc/AzurLaneAutoScript.git
           git fetch upstream
-          git merge upstream/master --no-edit || true
+          if ! git merge upstream/master --no-edit; then
+            echo "Merge conflict detected, aborting merge"
+            git merge --abort
+          fi
           git push origin master
