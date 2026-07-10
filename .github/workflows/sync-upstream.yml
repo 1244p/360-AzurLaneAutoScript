@@ -26,6 +26,7 @@ jobs:
         run: |
           git remote remove upstream 2>/dev/null || true
           git remote add upstream https://github.com/LmeSzinc/AzurLaneAutoScript.git
+          git pull --rebase origin master
           git fetch upstream
           if ! git merge upstream/master --no-edit; then
             echo "Merge conflict detected, aborting merge"
