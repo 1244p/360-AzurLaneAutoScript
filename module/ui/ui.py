@@ -8,7 +8,7 @@ from module.exercise.assets import EXERCISE_PREPARATION
 from module.handler.assets import (AUTO_SEARCH_MENU_EXIT, BATTLE_PASS_NEW_SEASON, BATTLE_PASS_NOTICE, GAME_TIPS,
                                    LOGIN_ANNOUNCE, LOGIN_ANNOUNCE_2, LOGIN_CHECK, LOGIN_RETURN_SIGN,
                                    MAINTENANCE_ANNOUNCE, MONTHLY_PASS_NOTICE)
-from module.handler.info_handler import InfoHandler
+from module.handler.floating_ball import FloatingBallHandler
 from module.logger import logger
 from module.map.assets import (FLEET_PREPARATION, MAP_PREPARATION,
                                MAP_PREPARATION_HARD, MAP_PREPARATION_CANCEL, WITHDRAW)
@@ -21,7 +21,7 @@ from module.ui.page import Page, page_academy, page_campaign, page_event, page_m
 from module.ui_white.assets import *
 
 
-class UI(InfoHandler):
+class UI(FloatingBallHandler):
     ui_current: Page
 
     def ui_page_appear(self, page, offset=(30, 30), interval=0):

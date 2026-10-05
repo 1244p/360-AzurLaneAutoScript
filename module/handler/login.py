@@ -151,6 +151,10 @@ class LoginHandler(UI):
         finally:
             self.device.screenshot_interval_set()
 
+        # The 360 client creates its floating ball on every game start, hide it before
+        # the first task, and every restart is a login as well.
+        self.handle_floating_ball()
+
     def app_stop(self):
         logger.hr('App stop')
         self.device.app_stop()
