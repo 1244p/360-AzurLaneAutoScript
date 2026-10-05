@@ -1,0 +1,112 @@
+name: Sync upstream
+
+# Keep this fork in sync with LmeSzinc/AzurLaneAutoScript.
+#
+# Safety rules of this workflow, so the local commits of this fork can not be lost:
+#   * it only ever MERGES, it never resets a branch and never force pushes master,
+#   * before every merge the current master is saved to the branch backup/master,
+#   * if the merge conflicts it is aborted, master stays exactly as it was, an issue is
+#     opened and the job fails, so a human resolves it,
+#   * the generated module/handler/assets.py is resolved automatically, see
+#     .github/scripts/resolve_generated_assets.py.
+#
+# Requirements in the fork (Settings):
+#   * Actions enabled at all, GitHub disables them in fresh forks,
+#   * Settings - Actions - General - Workflow permissions: Read and write permissions.
+
+on:
+  schedule:
+    # 03:00 Asia/Shanghai
+    - cron: '0 19 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: sync-upstream
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout master
+        uses: actions/checkout@v4
+        with:
+          ref: master
+          fetch-depth: 0
+
+      - name: Set up git
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git remote add upstream https://github.com/LmeSzinc/AzurLaneAutoScript.git \
+            || git remote set-url upstream https://github.com/LmeSzinc/AzurLaneAutoScript.git
+          git fetch --no-tags upstream master
+
+      - name: Check upstream
+        id: check
+        run: |
+          behind=$(git rev-list --count HEAD..upstream/master)
+          echo "behind=$behind" >> "$GITHUB_OUTPUT"
+          echo "Commits behind upstream: $behind"
+          git log --oneline HEAD..upstream/master | head -30
+
+      - name: Backup master
+        if: steps.check.outputs.behind != '0'
+        run: git push --force origin "HEAD:refs/heads/backup/master"
+
+      - name: Merge upstream
+        id: merge
+        if: steps.check.outputs.behind != '0'
+        run: |
+          set +e
+          git merge --no-edit upstream/master
+          status=$?
+          set -e
+          if [ "$status" -eq 0 ]; then
+            echo 'conflict=false' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo 'Merge conflicted, resolving the generated assets file'
+          if git ls-files -u -- module/handler/assets.py | grep -q .; then
+            git checkout --theirs -- module/handler/assets.py
+            python3 .github/scripts/resolve_generated_assets.py
+            git add module/handler/assets.py
+          fi
+
+          if git ls-files -u | grep -q .; then
+            echo 'Conflicted files that need a human:'
+            git diff --name-only --diff-filter=U
+            git merge --abort
+            echo 'conflict=true' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          git commit --no-edit
+          echo 'conflict=false' >> "$GITHUB_OUTPUT"
+
+      - name: Push
+        if: steps.check.outputs.behind != '0' && steps.merge.outputs.conflict == 'false'
+        run: git push origin HEAD:master
+
+      - name: Report conflict
+        if: steps.merge.outputs.conflict == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          body=$(printf '%s\n\n%s\n\n%s\n\n%s' \
+            'The automatic merge of LmeSzinc/AzurLaneAutoScript into master conflicted.' \
+            'Nothing was changed: master is untouched and its previous state is kept in the backup/master branch.' \
+            'Resolve it locally: git fetch upstream && git merge upstream/master, fix the conflicted files listed in the workflow log, then git push origin master.' \
+            'The sync resumes on the next run.')
+          number=$(gh issue list --state open --search 'Upstream sync needs a manual merge in:title' --json number --jq '.[0].number')
+          if [ -n "$number" ]; then
+            gh issue comment "$number" --body "$body"
+          else
+            gh issue create --title 'Upstream sync needs a manual merge' --body "$body"
+          fi
+          exit 1
